@@ -3,7 +3,7 @@
 # 构建管理节点的最终镜像 (node-slurm-control)。
 # 功能：
 # 1. 基于 ohpc/base-master:1.0 镜像。
-# 2. 复制所有相关的 Slurm、SSH、脚本等配置文件。
+# 2. 复制所有相关的 Slurm、脚本等配置文件。
 # 3. 设置日志文件、用户和权限。
 # 4. 启用所需的服务，并设置容器启动命令为 /usr/sbin/init。
 #
@@ -65,32 +65,29 @@ buildah run "${ctr}" -- bash -c '
   chmod 0755 /var/spool/slurm/statesave
 '
 
-# 7. 设置 root 密码 (仅建议用于开发和测试)
-buildah run "${ctr}" -- echo 'root:root' | chpasswd
-
-# 8. 清除 nologin 文件，否则容器环境下有时候会报错
+# 7. 清除 nologin 文件，否则容器环境下有时候会报错
 buildah run "${ctr}" -- bash -c '
   echo "rm -f /var/run/nologin" >> /etc/rc.local
   chmod +x /etc/rc.local
 '
 
-# 9. 复制 systemd 服务覆写配置
+# 8. 复制 systemd 服务覆写配置
 echo "--- Copying systemd override files ---"
 buildah copy "${ctr}" ./systemd_config/slurmctld_override.conf /etc/systemd/system/slurmctld.service.d/override.conf
 buildah copy "${ctr}" ./systemd_config/slurmdbd_override.conf /etc/systemd/system/slurmdbd.service.d/override.conf
 buildah copy "${ctr}" ./systemd_config/slurmrestd_override.conf /etc/systemd/system/slurmrestd.service.d/override.conf
 
-# 10. 启用所需服务
+# 9. 启用所需服务
 buildah run "${ctr}" -- systemctl enable munge slurmctld slurmdbd slurmrestd nslcd
 
-# 11. 设置容器默认启动命令
+# 10. 设置容器默认启动命令
 buildah config --cmd '["/usr/sbin/init"]' "${ctr}"
 
-# 12. 提交工作容器为新镜像
+# 11. 提交工作容器为新镜像
 echo "--- Committing ${NEW_IMAGE_NAME} ---"
 buildah commit "${ctr}" "${NEW_IMAGE_NAME}"
 
-# 13. 清理临时工作容器
+# 12. 清理临时工作容器
 buildah rm "${ctr}"
 
 echo "--- Build complete for ${NEW_IMAGE_NAME} ---"

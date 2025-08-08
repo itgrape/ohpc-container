@@ -92,7 +92,7 @@ buildah run "${final_ctr}" -- bash -c '
 '
 
 # 设置 root 密码
-buildah run "${final_ctr}" -- echo 'root:root' | chpasswd
+buildah run "${final_ctr}" -- bash -c 'usermod -p "$(openssl passwd -1 -stdin <<< root)" root'
 
 # 配置开机任务
 buildah run "${final_ctr}" -- bash -c '

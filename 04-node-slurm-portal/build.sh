@@ -72,9 +72,6 @@ buildah copy --from "${frontend_builder_ctr}" "${final_ctr}" /app/frontend/dist 
 # --- 第 5 部分: 最终配置 ---
 echo "--- Part 5: Final configuration ---"
 
-# 设置 root 密码
-buildah run "${final_ctr}" -- echo 'root:root' | chpasswd
-
 # 配置开机任务
 buildah run "${final_ctr}" -- bash -c '
   echo "rm -f /var/run/nologin" >> /etc/rc.local
