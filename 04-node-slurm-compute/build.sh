@@ -58,7 +58,6 @@ buildah run "${final_ctr}" -- bash -c '
                  openblas-gnu13-ohpc netcdf-gnu13-openmpi5-ohpc \
                  ohpc-gnu13-python-libs
   dnf install -y patch file zstd bzip2 xz  \
-                 python3 gcc-c++ gcc-gfortran \
                  git tmux screen \
                  openssh-server dropbear at
 
