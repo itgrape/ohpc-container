@@ -26,7 +26,7 @@ buildah config --label maintainer="${MAINTAINER}" --created-by "Buildah" "${ctr}
 buildah run "${ctr}" -- bash -c '
   set -ex
   echo ">>> Installing OpenLDAP packages..."
-  dnf install -y openldap openldap-servers openldap-clients nginx phpldapadmin
+  dnf install -y iputils iproute openldap openldap-servers openldap-clients nginx phpldapadmin
 
   echo ">>> Cleaning up package cache..."
   dnf clean all
