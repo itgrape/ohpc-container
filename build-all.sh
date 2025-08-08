@@ -36,8 +36,8 @@ echo "--- Level 2 Complete ---"
 echo
 
 # --- Level 3 ---
-echo ">>> [LEVEL 3] Building Role-specific Bases..."
-(cd 03-base-master && buildah unshare bash build.sh)
+echo ">>> [LEVEL 3] Building Compute Bases and Control Node..."
+(cd 03-node-slurm-control && buildah unshare bash build.sh)
 (cd 03-base-compute && buildah unshare bash build.sh)
 echo "--- Level 3 Complete ---"
 echo
@@ -47,7 +47,6 @@ echo ">>> [LEVEL 4] Building Final Service Nodes..."
 (cd 04-node-slurm-compute && buildah unshare bash build.sh)
 (cd 04-node-slurm-login && buildah unshare bash build.sh)
 (cd 04-node-slurm-portal && buildah unshare bash build.sh)
-(cd 04-node-slurm-control && buildah unshare bash build.sh)
 
 echo "--- Level 4 Complete ---"
 echo

@@ -2,15 +2,16 @@
 #
 # 构建管理节点的最终镜像 (node-slurm-control)。
 # 功能：
-# 1. 基于 ohpc/base-master:1.0 镜像。
-# 2. 复制所有相关的 Slurm、脚本等配置文件。
-# 3. 设置日志文件、用户和权限。
-# 4. 启用所需的服务，并设置容器启动命令为 /usr/sbin/init。
+# 1. 基于 ohpc/base-ohpc:1.0 镜像。
+# 2. 安装 Slurm 服务器端组件 (slurm-server, slurmrestd)。
+# 3. 复制所有相关的 Slurm、脚本等配置文件。
+# 4. 设置日志文件、用户和权限。
+# 5. 启用所需的服务，并设置容器启动命令为 /usr/sbin/init。
 #
 set -e # 任何命令失败则立即退出
 
 # --- 配置 ---
-BASE_IMAGE="ohpc/base-master:1.0"
+BASE_IMAGE="ohpc/base-ohpc:1.0"
 NEW_IMAGE_NAME="ohpc/node-slurm-control:1.0"
 MAINTAINER="pushihao@njust.edu.cn"
 
@@ -22,10 +23,13 @@ ctr=$(buildah from "${BASE_IMAGE}")
 # 2. 设置镜像元数据
 buildah config --label maintainer="${MAINTAINER}" --created-by "Buildah" "${ctr}"
 
-# 3. 安装一些通用包，可能会用到
+# 3. 安装服务器组件以及一些通用包，可能会用到
 buildah run "${ctr}" -- bash -c '
   set -ex
-  echo ">>> Installing some common package..."
+  echo ">>> Installing packages..."
+  dnf install -y ohpc-slurm-server
+  dnf install -y slurm-ohpc-slurmrestd
+
   dnf install -y git
   
   echo ">>> Cleaning up package cache..."
