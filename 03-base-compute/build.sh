@@ -39,7 +39,7 @@ buildah run "${ctr}" -- bash -c '
 '
 
 # 6. 创建空的脚本文件
-buildan run "${ctr}" -- bash -c '
+buildah run "${ctr}" -- bash -c '
   set -ex
   echo ">>> Creating empty script file..."
   touch /etc/slurm/prolog.sh /etc/slurm/epilog.sh /etc/slurm/task_prolog.sh /etc/slurm/task_epilog.sh
