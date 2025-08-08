@@ -38,7 +38,7 @@ echo ">>> Copying configuration files..."
 buildah copy "${ctr}" ./ssh_config/sshd_config /etc/ssh/sshd_config
 
 # 5. 设置 root 密码
-buildah run "${final_ctr}" -- bash -c 'usermod -p "$(openssl passwd -1 -stdin <<< root)" root'
+buildah run "${ctr}" -- bash -c 'usermod -p "$(openssl passwd -1 -stdin <<< root)" root'
 
 # 6. 配置开机任务
 buildah run "${ctr}" -- bash -c '
