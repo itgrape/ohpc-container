@@ -1,24 +1,17 @@
 #!/bin/bash
 #
-# 构建所有镜像的根镜像 (base-root)。
+# 构建所有镜像的根镜像 (BOS, Base Operating System)。
 # 功能：
 # 1. 基于官方的 rockylinux:9。
 # 2. 添加 EPEL 源。
 # 3. 对 systemd 进行裁剪，移除不必要的服务，使其适合作为容器基础环境。
-# 4. 清理缓存，减小镜像体积。
 #
 set -e # 任何命令失败则立即退出
 
 # --- 配置 ---
-# 基础镜像，直接从 Docker Hub 拉取
 BASE_IMAGE="registry.docker.com/library/rockylinux:9"
-
-# 定义新镜像的名称和标签
-NEW_IMAGE_NAME="ohpc/base-root:1.0" 
-
-# 维护者信息
+NEW_IMAGE_NAME="ohpc/bos:1.0" 
 MAINTAINER="pushihao@njust.edu.cn"
-
 
 echo "--- Building ${NEW_IMAGE_NAME} from ${BASE_IMAGE} ---"
 

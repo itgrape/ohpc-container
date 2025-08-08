@@ -2,7 +2,7 @@
 #
 # 构建 OpenHPC 基础镜像 (base-ohpc)。
 # 功能：
-# 1. 基于 ohpc/base-root:1.0 镜像。
+# 1. 基于 ohpc/bos:1.0 镜像。
 # 2. 安装 OpenHPC 的软件源和一系列核心软件包。
 # 3. 生成 Munge 密钥。
 # 4. 进行 LDAP 用户认证。
@@ -10,7 +10,7 @@
 set -e # 任何命令失败则立即退出
 
 # --- 配置 ---
-BASE_IMAGE="ohpc/base-root:1.0"
+BASE_IMAGE="ohpc/bos:1.0"
 NEW_IMAGE_NAME="ohpc/base-ohpc:1.0"
 MAINTAINER="pushihao@njust.edu.cn"
 

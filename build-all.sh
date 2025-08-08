@@ -22,7 +22,7 @@ echo
 
 # --- Level 1 ---
 echo ">>> [LEVEL 1] Building Root Base Image..."
-(cd 01-base-root && buildah unshare bash build.sh)
+(cd 01-bos && buildah unshare bash build.sh)
 echo "--- Level 1 Complete ---"
 echo
 

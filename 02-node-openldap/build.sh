@@ -2,7 +2,7 @@
 #
 # 构建 OpenLDAP 服务器节点镜像。
 # 功能：
-# 1. 基于 ohpc/base-root:1.0 镜像，继承其所有基础配置。
+# 1. 基于 ohpc/bos:1.0 镜像，继承其所有基础配置。
 # 2. 安装 OpenLDAP 服务器、Nginx 和 phpLDAPadmin。
 # 3. 复制预设的 Nginx 和 phpLDAPadmin 配置文件。
 # 4. 启用所需服务 (slapd, nginx)。
@@ -10,7 +10,7 @@
 set -e # 任何命令失败则立即退出
 
 # --- 配置 ---
-BASE_IMAGE="ohpc/base-root:1.0"
+BASE_IMAGE="ohpc/bos:1.0"
 NEW_IMAGE_NAME="ohpc/node-openldap:1.0"
 MAINTAINER="pushihao@njust.edu.cn"
 
