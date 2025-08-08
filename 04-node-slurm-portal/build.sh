@@ -4,12 +4,12 @@
 # 这是一个多阶段构建过程：
 # 1. Frontend Builder: 使用 Node.js 镜像编译前端静态文件。
 # 2. Backend Builder: 使用 Go 镜像编译后端服务器二进制文件。
-# 3. Final Image: 基于 ohpc/base-master:1.0，安装软件包，并从前两个阶段复制编译好的产物，最后进行配置。
+# 3. Final Image: 基于 ohpc/base-compute:1.0，安装软件包，并从前两个阶段复制编译好的产物，最后进行配置。
 #
 set -e # 任何命令失败则立即退出
 
 # --- 配置 ---
-BASE_IMAGE="ohpc/base-master:1.0"
+BASE_IMAGE="ohpc/base-compute:1.0"
 NEW_IMAGE_NAME="ohpc/node-slurm-portal:1.0"
 MAINTAINER="pushihao@njust.edu.cn"
 
