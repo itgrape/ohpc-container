@@ -59,6 +59,7 @@ buildah run "${final_ctr}" -- bash -c '
                  ohpc-gnu13-python-libs
   dnf install -y patch file zstd bzip2 xz  \
                  git tmux screen \
+                 procps-ng \
                  openssh-server dropbear at
 
   echo ">>> Cleaning up package cache..."
