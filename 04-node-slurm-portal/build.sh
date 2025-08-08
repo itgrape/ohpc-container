@@ -21,7 +21,7 @@ DASHBOARD_REPO="https://github.com/itgrape/slurm-dashboard.git"
 # --- 第 1 部分: 前端构建阶段 ---
 echo "--- Part 1: Build Frontend in a dedicated Node.js builder ---"
 frontend_builder_ctr=$(buildah from "${FRONTEND_BUILDER_IMAGE}")
-buildah run "${frontend_builder_ctr}" -- bash -c '
+buildah run "${frontend_builder_ctr}" -- sh -c '
   set -ex
   apk add --no-cache git
   git clone '"${DASHBOARD_REPO}"' /app
