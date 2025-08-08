@@ -1,0 +1,16 @@
+[Unit]
+Description=Simple Slurm Dashboard
+After=network.target
+
+[Service]
+ExecStart=/usr/local/dashboard/server
+WorkingDirectory=/usr/local/dashboard
+User=root
+Group=root
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

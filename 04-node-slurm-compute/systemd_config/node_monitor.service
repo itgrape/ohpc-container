@@ -1,0 +1,15 @@
+[Unit]
+Description=Node Monitor Daemon for Slurm
+After=network.target slurmctld.service
+
+[Service]
+ExecStart=/usr/local/bin/node_monitor
+User=root
+Group=root
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

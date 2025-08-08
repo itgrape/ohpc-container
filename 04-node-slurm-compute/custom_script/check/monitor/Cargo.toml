@@ -1,0 +1,28 @@
+[package]
+name = "monitor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# 异步运行时
+tokio = { version = "1.47", features = ["full"] }
+
+# JSON 序列化和反序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["raw_value"] }
+
+# 日志记录
+log = "0.4"
+env_logger = "0.11"
+
+# 错误处理
+anyhow = "1.0"
+
+# 时间
+chrono = "0.4"
+
+# 用于设置 Linux 文件权限
+nix = { version = "0.30", features = ["fs"] }
+
+# 系统信息
+sysinfo = "0.36"
