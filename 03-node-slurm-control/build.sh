@@ -31,6 +31,7 @@ buildah run "${ctr}" -- bash -c '
   dnf install -y slurm-ohpc-slurmrestd
 
   dnf install -y git
+  dnf install -y jq
   
   echo ">>> Cleaning up package cache..."
   dnf clean all
