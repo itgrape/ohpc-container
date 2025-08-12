@@ -29,6 +29,7 @@ echo
 # --- Level 2 ---
 echo ">>> [LEVEL 2] Building Core Services & OHPC Base..."
 (cd 02-base-ohpc && buildah unshare bash build.sh)
+(cd 02-node-network && buildah unshare bash build.sh)
 (cd 02-node-openldap && buildah unshare bash build.sh)
 # (cd 02-node-mysql && buildah unshare bash build.sh)
 
