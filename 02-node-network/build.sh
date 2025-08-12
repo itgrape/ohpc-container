@@ -46,11 +46,26 @@ buildah run "${ctr}" -- bash -c '
   chmod 640 /etc/nslcd.conf
 '
 
-# 5. 提交工作容器为新镜像
+# 5. 设置 root 密码
+buildah run "${ctr}" -- bash -c 'usermod -p "$(openssl passwd -1 -stdin <<< root)" root'
+
+# 6. 配置开机任务
+buildah run "${ctr}" -- bash -c '
+  echo "rm -f /var/run/nologin" >> /etc/rc.local
+  chmod +x /etc/rc.local
+'
+
+# 7. 启用 systemd 服务
+buildah run "${ctr}" -- systemctl enable sshd nslcd
+
+# 8. 设置容器默认启动命令
+buildah config --cmd '["/usr/sbin/init"]' "${ctr}"
+
+# 9. 提交工作容器为新镜像
 echo "--- Committing ${NEW_IMAGE_NAME} ---"
 buildah commit "${ctr}" "${NEW_IMAGE_NAME}"
 
-# 6. 清理临时工作容器
+# 10. 清理临时工作容器
 buildah rm "${ctr}"
 
 echo "--- Build complete for ${NEW_IMAGE_NAME} ---"
