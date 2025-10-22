@@ -110,9 +110,12 @@ async fn main() -> Result<()> {
     let job_id = env::var("SLURM_JOB_ID")
         .context("SLURM_JOB_ID environment variable not set. This must be run inside a Slurm job.")?;
 
+    let cuda_visible_devices = env::var("CUDA_VISIBLE_DEVICES")
+        .unwrap_or_default();
+
     match cli.command {
-        Commands::Register { log_path } => register(&job_id, log_path).await?,
-        Commands::Monitor => monitor(&job_id).await?,
+        Commands::Register { log_path } => register(&job_id, log_path, &cuda_visible_devices).await?,
+        Commands::Monitor => monitor(&job_id, &cuda_visible_devices).await?,
         Commands::Cancel => cancel(&job_id).await?,
     }
 
@@ -123,7 +126,7 @@ async fn main() -> Result<()> {
 // 命令处理函数 (Command Handlers)
 // ============================================================================
 
-async fn register(job_id: &str, log_path: PathBuf) -> Result<()> {
+async fn register(job_id: &str, log_path: PathBuf, cuda_visible_devices: &str) -> Result<()> {
     let job_partition = env::var("SLURM_JOB_PARTITION").unwrap_or_default();
     let lower_job_partition = job_partition.to_lowercase();
 
@@ -134,14 +137,14 @@ async fn register(job_id: &str, log_path: PathBuf) -> Result<()> {
         );
         (INFINITE_CHECK_COUNT, INFINITE_CHECK_COUNT)
     } else if lower_job_partition.contains("gpu") {
-        let gpu_count = determine_gpu_check_count()?;
+        let gpu_count = determine_gpu_check_count(cuda_visible_devices)?;
         info!(
             "Dynamically determined GPU monitoring count: {}, CPU monitoring count: {}",
             gpu_count, INFINITE_CHECK_COUNT
         );
         (gpu_count, INFINITE_CHECK_COUNT)
     } else {
-        let gpu_count = determine_gpu_check_count()?;
+        let gpu_count = determine_gpu_check_count(cuda_visible_devices)?;
         info!(
             "Dynamically determined GPU monitoring count: {}, CPU monitoring count: {}",
             gpu_count, DEFAULT_CPU_CHECK_COUNT
@@ -196,7 +199,7 @@ async fn register(job_id: &str, log_path: PathBuf) -> Result<()> {
     Ok(())
 }
 
-async fn monitor(job_id: &str) -> Result<()> {
+async fn monitor(job_id: &str, cuda_visible_devices: &str) -> Result<()> {
     write_pid_file(job_id).context("Failed to write PID file")?;
 
     let mut stream = UnixStream::connect(SOCKET_PATH)
@@ -206,19 +209,30 @@ async fn monitor(job_id: &str) -> Result<()> {
     let mut interval = tokio::time::interval(METRICS_SEND_INTERVAL);
     let mut sys = System::new();
 
+    let has_gpus = !cuda_visible_devices.is_empty();
+    if !has_gpus {
+        info!("No GPUs detected (CUDA_VISIBLE_DEVICES is empty). GPU metrics will be reported as 0.");
+    }
     info!("Starting monitoring for job {job_id}...");
 
     loop {
         interval.tick().await;
 
-        let gpu_util = get_gpu_utilization().unwrap_or_else(|e| {
-            warn!("Could not get GPU utilization: {}", e);
-            0.0
-        });
-        let gpu_mem_util = get_gpu_memory_utilization().unwrap_or_else(|e| {
-            warn!("Could not get GPU memory utilization: {}", e);
-            0.0
-        });
+        let (gpu_util, gpu_mem_util) = if has_gpus {
+            let util = get_gpu_utilization(cuda_visible_devices).unwrap_or_else(|e| {
+                warn!("Could not get GPU utilization: {}", e);
+                0.0
+            });
+            let mem_util = get_gpu_memory_utilization(cuda_visible_devices).unwrap_or_else(|e| {
+                warn!("Could not get GPU memory utilization: {}", e);
+                0.0
+            });
+            (util, mem_util)
+        } else {
+            // 如果没有 GPU，直接返回 0
+            (0.0, 0.0)
+        };
+
         let cpu_util = get_cpu_utilization(&mut sys).unwrap_or_else(|e| {
             warn!("Could not get CPU utilization: {}", e);
             0.0
@@ -317,10 +331,15 @@ fn get_gpu_check_count(gpu_name: &str) -> i32 {
     }
 }
 
-fn determine_gpu_check_count() -> Result<i32> {
+fn determine_gpu_check_count(cuda_visible_devices: &str) -> Result<i32> {
+    if cuda_visible_devices.is_empty() {
+        info!("CUDA_VISIBLE_DEVICES is empty. Assuming no GPUs are available. Setting GPU check count to infinite.");
+        return Ok(INFINITE_CHECK_COUNT);
+    }
+
     let output = match run_command(
         "nvidia-smi",
-        &["--query-gpu=index,name", "--format=csv,noheader,nounits"],
+        &["--query-gpu=index,name", "--format=csv,noheader,nounits", "--id", cuda_visible_devices],
     ) {
         Ok(out) => out,
         Err(e) => {
@@ -352,10 +371,10 @@ fn determine_gpu_check_count() -> Result<i32> {
     Ok(min_check_count)
 }
 
-fn get_gpu_utilization() -> Result<f64> {
+fn get_gpu_utilization(cuda_visible_devices: &str) -> Result<f64> {
     let output = run_command(
         "nvidia-smi",
-        &["--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
+        &["--query-gpu=utilization.gpu", "--format=csv,noheader,nounits", "--id", cuda_visible_devices],
     )?;
 
     let utils: Vec<f64> = output
@@ -370,10 +389,10 @@ fn get_gpu_utilization() -> Result<f64> {
     Ok(utils.iter().sum::<f64>() / utils.len() as f64)
 }
 
-fn get_gpu_memory_utilization() -> Result<f64> {
+fn get_gpu_memory_utilization(cuda_visible_devices: &str) -> Result<f64> {
     let output = run_command(
         "nvidia-smi",
-        &["--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"],
+        &["--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits", "--id", cuda_visible_devices],
     )?;
 
     let percentages: Vec<f64> = output
