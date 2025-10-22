@@ -28,9 +28,9 @@ const HEARTBEAT_TIMEOUT: Duration = Duration::from_secs(180);
 const HEARTBEAT_CHECK_INTERVAL: Duration = Duration::from_secs(60);
 
 // 利用率阈值 (百分比)
-const GPU_UTILIZATION_THRESHOLD: f64 = 70.0;
-const GPU_MEMORY_UTILIZATION_THRESHOLD: f64 = 30.0;
-const CPU_UTILIZATION_THRESHOLD: f64 = 50.0;
+const GPU_UTILIZATION_THRESHOLD: f64 = 5.0;
+const GPU_MEMORY_UTILIZATION_THRESHOLD: f64 = 5.0;
+const CPU_UTILIZATION_THRESHOLD: f64 = 5.0;
 
 // 丢弃前多少个数据 (个) (用于给用户加载模型或单纯墨迹的时间)
 const BUFFER_PERIOD: usize = 30;
@@ -312,12 +312,12 @@ async fn handle_metrics(payload: MetricsPayload, tracker: SharedTracker) -> Opti
             job.gpu_utilizations.pop_front();
         }
         if job.gpu_utilizations.len() == job.gpu_monitor_count {
-            let avg = calculate_average(&job.gpu_utilizations);
-            info!("Job {}, Average GPU Utilization: {:.2}%", job_id, avg);
-            if avg < GPU_UTILIZATION_THRESHOLD {
+            let max_val = calculate_max(&job.gpu_utilizations);
+            info!("Job {}, Max GPU Utilization: {:.2}%", job_id, max_val);
+            if max_val < GPU_UTILIZATION_THRESHOLD {
                 reason = Some(format!(
-                    "Average GPU utilization {:.2}% is below threshold {:.0}%",
-                    avg, GPU_UTILIZATION_THRESHOLD
+                    "Max GPU utilization {:.2}% is below threshold {:.0}%",
+                    max_val, GPU_UTILIZATION_THRESHOLD
                 ));
             }
         }
@@ -329,12 +329,12 @@ async fn handle_metrics(payload: MetricsPayload, tracker: SharedTracker) -> Opti
             job.gpu_memory_utilizations.pop_front();
         }
         if job.gpu_memory_utilizations.len() == job.gpu_monitor_count {
-            let avg = calculate_average(&job.gpu_memory_utilizations);
-            info!("Job {}, Average GPU Memory Utilization: {:.2}%", job_id, avg);
-            if avg < GPU_MEMORY_UTILIZATION_THRESHOLD {
+            let max_val = calculate_max(&job.gpu_memory_utilizations);
+            info!("Job {}, Max GPU Memory Utilization: {:.2}%", job_id, max_val);
+            if max_val < GPU_MEMORY_UTILIZATION_THRESHOLD {
                 reason = Some(format!(
-                    "Average GPU Memory utilization {:.2}% is below threshold {:.0}%",
-                    avg, GPU_MEMORY_UTILIZATION_THRESHOLD
+                    "Max GPU Memory utilization {:.2}% is below threshold {:.0}%",
+                    max_val, GPU_MEMORY_UTILIZATION_THRESHOLD
                 ));
             }
         }
@@ -346,12 +346,12 @@ async fn handle_metrics(payload: MetricsPayload, tracker: SharedTracker) -> Opti
             job.cpu_utilizations.pop_front();
         }
         if job.cpu_utilizations.len() == job.cpu_monitor_count {
-            let avg = calculate_average(&job.cpu_utilizations);
-            info!("Job {}, Average CPU Utilization: {:.2}%", job_id, avg);
-            if avg < CPU_UTILIZATION_THRESHOLD {
+            let max_val = calculate_max(&job.cpu_utilizations);
+            info!("Job {}, Max CPU Utilization: {:.2}%", job_id, max_val);
+            if max_val < CPU_UTILIZATION_THRESHOLD {
                 reason = Some(format!(
-                    "Average CPU utilization {:.2}% is below threshold {:.0}%",
-                    avg, CPU_UTILIZATION_THRESHOLD
+                    "Max CPU utilization {:.2}% is below threshold {:.0}%",
+                    max_val, CPU_UTILIZATION_THRESHOLD
                 ));
             }
         }
@@ -440,12 +440,20 @@ async fn kill_slurm_job(job_id: &str, reason: &str) {
     }
 }
 
+#[allow(dead_code)]
 fn calculate_average(data: &VecDeque<f64>) -> f64 {
     if data.is_empty() {
         return 0.0;
     }
     let sum: f64 = data.iter().sum();
     sum / data.len() as f64
+}
+
+fn calculate_max(data: &VecDeque<f64>) -> f64 {
+    if data.is_empty() {
+        return 0.0;
+    }
+    data.iter().max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)).cloned().unwrap_or(0.0)
 }
 
 async fn log_to_job_file(log_path: &Path, message: &str) {
