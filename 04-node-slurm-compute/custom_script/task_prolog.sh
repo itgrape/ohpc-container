@@ -33,7 +33,10 @@ PROLOG_LOCK_FILE="${LOCK_DIR}/prolog-${SLURM_JOB_ID}-${NODE_HOSTNAME}.lock"
         echo "[Prolog on ${NODE_HOSTNAME}] Registration successful."
 
         # --- 监控进程交给 at 管理 ---
-        AT_JOB_ID=$(echo "$HELPER_PATH monitor" | at now 2>&1 | grep "job" | awk '{print $2}' | tail -n 1)
+        CURRENT_CUDA_DEVICES="${CUDA_VISIBLE_DEVICES:-}"
+        CURRENT_JOB_ID="${SLURM_JOB_ID}"
+        CMD_STRING="export SLURM_JOB_ID='${CURRENT_JOB_ID}'; export CUDA_VISIBLE_DEVICES='${CURRENT_CUDA_DEVICES}'; ${HELPER_PATH} monitor"
+        AT_JOB_ID=$(echo "$CMD_STRING" | at now 2>&1 | grep "job" | awk '{print $2}' | tail -n 1)
         echo "[Prolog on ${NODE_HOSTNAME}] Monitor process scheduled with 'at' job ID: $AT_JOB_ID."
 
     ) >> "${MONITOR_DIR}/monitor-${SLURM_JOB_ID}-${NODE_HOSTNAME}.log" 2>&1
