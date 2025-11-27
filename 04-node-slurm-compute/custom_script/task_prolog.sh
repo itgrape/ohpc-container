@@ -23,6 +23,7 @@ PROLOG_LOCK_FILE="${LOCK_DIR}/prolog-${SLURM_JOB_ID}-${NODE_HOSTNAME}.lock"
     (
         HELPER_PATH="/usr/local/bin/job_helper"
         INFO_LOG_PATH="${LOG_DIR}/info-${SLURM_JOB_ID}.log"
+        MONITOR_LOG="/tmp/monitor_debug_${SLURM_JOB_ID}.log"
 
         # --- 注册任务信息 ---
         $HELPER_PATH register $INFO_LOG_PATH
@@ -32,13 +33,25 @@ PROLOG_LOCK_FILE="${LOCK_DIR}/prolog-${SLURM_JOB_ID}-${NODE_HOSTNAME}.lock"
         fi
         echo "[Prolog on ${NODE_HOSTNAME}] Registration successful."
 
-        # --- 监控进程交给 at 管理 ---
-        CURRENT_CUDA_DEVICES="${CUDA_VISIBLE_DEVICES:-}"
-        CURRENT_JOB_ID="${SLURM_JOB_ID}"
-        CMD_STRING="export SLURM_JOB_ID='${CURRENT_JOB_ID}'; export CUDA_VISIBLE_DEVICES='${CURRENT_CUDA_DEVICES}'; ${HELPER_PATH} monitor"
-        AT_JOB_ID=$(echo "$CMD_STRING" | at now 2>&1 | grep "job" | awk '{print $2}' | tail -n 1)
-        echo "[Prolog on ${NODE_HOSTNAME}] Monitor process scheduled with 'at' job ID: $AT_JOB_ID."
-
+        # --- 监控进程后台运行 ---
+        TARGET_CUDA_DEVICES="${CUDA_VISIBLE_DEVICES:-}"
+        if [ -z "$TARGET_CUDA_DEVICES" ]; then
+             TARGET_CUDA_DEVICES="${SLURM_JOB_GPUS:-}"
+        fi
+        echo "[Prolog] Launching monitor in background..."
+        
+        setsid bash -c "
+            export SLURM_JOB_ID='${SLURM_JOB_ID}'
+            export CUDA_VISIBLE_DEVICES='${TARGET_CUDA_DEVICES}'
+            nohup ${HELPER_PATH} monitor > '${MONITOR_LOG}' 2>&1 < /dev/null &
+        " &
+        sleep 1
+        
+        if pgrep -f "${HELPER_PATH} monitor" > /dev/null; then
+             echo "[Prolog] Monitor process started successfully. Log: ${MONITOR_LOG}"
+        else
+             echo "[Prolog] WARNING: Monitor process failed to start! Check ${MONITOR_LOG}"
+        fi
     ) >> "${MONITOR_DIR}/monitor-${SLURM_JOB_ID}-${NODE_HOSTNAME}.log" 2>&1
 
 
